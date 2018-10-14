@@ -1,9 +1,5 @@
 {%extends 'templates/layout.html' %}
 {% block content %}
-<script type="text/javascript" src="http://canvg.github.io/canvg/rgbcolor.js"></script> 
-<script type="text/javascript" src="http://canvg.github.io/canvg/StackBlur.js"></script>
-<script type="text/javascript" src="http://canvg.github.io/canvg/canvg.js"></script> 
-<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
 <div class="container">
 
@@ -68,6 +64,14 @@ function btnReadDCState(){
 	socket.emit('readSensor',4);
 }
 
+var count = 0;
+var graphCount = 0;
+
+var countVolt = 0;
+var countCurrent = 0;
+var countPress = 0;
+var countInput =0;
+
 socket.on('rs485',function(msg){
 
 	var testIn = msg.data;
@@ -76,19 +80,34 @@ socket.on('rs485',function(msg){
 	var gaugeValue = testIn/10;
 		
 	if(msg1 == 65){ 		//'A'
+	   countCurrent = ( countCurrent < 598 ) ? countCurrent + 1 : 0 ;
 		document.getElementById('currentValue').innerHTML = gaugeValue;
 		$('#gauge1').attr('data-value', gaugeValue);
+	   scopeData[0].sample[countCurrent] = gaugeValue;
+		scope.onPaint(scopeData);
 	} else if(msg1 == 66){
+	   countVolt = ( countVolt < 598 ) ? countVolt + 1 : 0 ;
 		document.getElementById('voltValue').innerHTML = gaugeValue;
 		$('#gauge2').attr('data-value', gaugeValue);
+	   scopeData[1].sample[countVolt] = gaugeValue;
 	} else if(msg1 == 67){
+	   countPress = ( countPress < 598 ) ? countPress + 1 : 0 ;
 		document.getElementById('pressValue').innerHTML = gaugeValue;
 		$('#gauge3').attr('data-value', gaugeValue);
+	   scopeData[2].sample[countPress] = gaugeValue;
 	} else if(msg1== 68){
-		document.getElementById('dcSate').innerHTML = gaugeValue;
+	   countInput = ( countInput < 598 ) ? countInput + 1 : 0 ;
+		document.getElementById('dcState').innerHTML = gaugeValue;
 		$('#gauge4').attr('data-value', gaugeValue);
+	   scopeData[3].sample[countInput] = gaugeValue;
 	}
 });	
+
+setInterval(function(){
+	count = ( count < 998 ) ? count = count +1 : 0;
+	var cmd = ( count % 4 + 1 );
+	socket.emit('readSensor',cmd);
+},250);
 
 </script>
 {% endblock %}

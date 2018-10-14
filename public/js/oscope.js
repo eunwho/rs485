@@ -11,8 +11,9 @@ var scope = (function() {
   var m_seconds_per_div	   = 60;
   var m_samples_per_second = 1;
   var m_divisions          = 10;
-  var m_yscale             = 2048;
-  var m_sample_bits        = 12;
+  var m_yscale             = 128;
+  var m_sample_bits        = 8;
+  var m_volts_per_div      = 1;
   var m_volts_per_div      = 1;
   var m_vrange             = 1;
   var m_cursor_index       = 1;			// ?
@@ -264,19 +265,19 @@ var scope = (function() {
 
     ctx.fillStyle = "red";
     y += dy + 1;
-    ctx.fillText('CH1 : I_ac [A]',440,10);
+    ctx.fillText('I_ac [A]',600,20);
 
     ctx.fillStyle = "green";
     y += dy + 1;
-    ctx.fillText('CH2 : V_ac [V]',440,10+dy);
+    ctx.fillText('V_ac [V]',600,20+dy);
 
     ctx.fillStyle = "blue";
     y += dy + 1;
-    ctx.fillText('CH3 : Pressure[MPa]',440,10+ dy * 2);
+    ctx.fillText('Pressure[MPa]',600,20+ dy * 2);
 
-    ctx.fillStyle = "yellow";
+    ctx.fillStyle = "darkgoldenrod";
     y += dy + 1;
-    ctx.fillText('CH4 : DC State',440,10 + dy * 3);
+    ctx.fillText('DC State',600,20 + dy * 3);
 
     t = (m_run) ? ("RUN : " + m_updates.toFixed(0)) : "STOP";
     ctx.fillStyle = (m_run) ? 'lime' : 'red';
@@ -324,7 +325,7 @@ var scope = (function() {
       break;
     case 3:
       ctx.translate(xaxis[1][0],xaxis[1][1] + voffset);
-      ctx.strokeStyle = "yellow";
+      ctx.strokeStyle = "darkgoldenrod";
       break;
     }
     
@@ -522,11 +523,11 @@ var scope = (function() {
 
 
 
-function initGauge1(gId){
+function initGauge1(gId,unit,title){
    var a = 'canvas[id=' + gId + ']';
 
-   $(a).attr('data-units',"[A]");
-   $(a).attr('data-title',"I_ac");
+   $(a).attr('data-units',unit);
+   $(a).attr('data-title',title);
    $(a).attr('data-min-value',0);
    $(a).attr('data-max-value',255);
    $(a).attr('data-major-ticks',[0,50,100,150,200,250]);
@@ -536,8 +537,7 @@ function initGauge1(gId){
 		'[ {"from": 0, "to": 170, "color": "rgba(0,255, 0, .3)"},{"from": 170, "to": 250, "color": "rgba(255,0, 0, .5)"} ]');
 }
 
-
-function initGauge(gId){
+function initGauge2(gId){
    var a = 'canvas[id=' + gId + ']';
 // $(a).attr('data-width',200);
 // $(a).attr('data-height',200);
@@ -583,15 +583,6 @@ function initGauge(gId){
    $(a).attr('data-value-box-border-radius',0);
 }
 
-
-
-
-
-
-
-
-
-
 const dataLength = 600;
 
 var scopeData = new Array();
@@ -624,20 +615,6 @@ function btnGraphClear(){
 	scope.onPaint(graphData);
 }
 
-socket.on('graph', function (msg) {
-
-	// console.log('rpm =',msg.rpm,'Irms =',msg.Irms,'P_total =',msg.P_total,' RePower = ',msg.RePower,'ImPower = ',msg.ImPower);
-	graphCount = ( graphCount < 600 ) ? graphCount + 1 : 0 ;
-
-	graphData[0].sample[graphCount] = msg.Current ; 
-	graphData[1].sample[graphCount] = msg.Voltage; 
-	graphData[2].sample[graphCount] = msg.Pressure; 
-	graphData[3].sample[graphCount] = msg.DCState; 
-
-	scope.onPaint(graphData);
-
-});
-
 function btnScopeClear(){
 	for( var j = 0 ; j < 4 ; j++){
 		for( var i = 0 ; i < 600 ; i++ )	scopeData[j].sample[i] = 0;
@@ -668,10 +645,10 @@ $("document").ready(function() {
   if (scope) {
     scope.init();
   }
-	initGauge1("gauge1");
-	initGauge1("gauge2");
-	initGauge1("gauge3");
-	initGauge1("gauge4");
+	initGauge1("gauge1",'[A]','전류');
+	initGauge1("gauge2",'[V]','전압');
+	initGauge1("gauge3",'[MPa]','압력');
+	initGauge1("gauge4",'[PU]','열림');
 });
 
 //---- end of oscope.js

@@ -142,19 +142,6 @@ io.on('connection', function (socket) {
    });    
 });
 
-/*
-setInterval(function(){
-
-   led.writeSync(1);
-
-   port.write('\x02'+'B000'+'\x03');
-   setTimeout(function(){
-      led.writeSync(0);
-   },10);
-
-},1000);
-*/
-
 port.on('data',function (data){
 
 	rxCount = ( rxCount < 99998 ) ? rxCount = rxCount+1 : rxCount ++;

@@ -9,7 +9,6 @@ var rxCount = 0;
 var Gpio = require('onoff').Gpio;
 var led = new Gpio(17,'out'); // rasp pin11
 
-
 const SerialPort = require('serialport');
 const port = new SerialPort('/dev/ttyAMA0',{
    baudRate: 9600
@@ -41,7 +40,7 @@ var routes    = require('./routes/index');
 var users     = require('./routes/users');
 var receiver  = require('./lib/receiver');
 var debug     = require('debug')('ploty:server');
-var portAddr  = process.env.PORT || '3000';
+var portAddr  = process.env.PORT || '4445';
 
 //--- create express application
 var app = express();
@@ -111,30 +110,34 @@ io.on('connection', function (socket) {
 
 	socket.on('readSensor',function(msg){
 
-		led.writeSync(1);
-
 		console.log('Read Sensor command ='+msg);
 
-		var command = 'A000';
+		var command = 'E0';
+		var ID_ADDR = '\x51';
+		var send = 1;
 
 		if(msg==1){
-			command = 'A000';
+			ID_ADDR = '\x51';
 		}else if ( msg == 2 ){
-			command = 'B000';
+			ID_ADDR = '\x61';
 		}else if ( msg == 3 ){
-			command = 'C000';
-		}else if ( msg == 4 ){
-			command = 'D000';
+			ID_ADDR = '\x71';
+		} else {
+			send = 0;
 		}
 		
-		var txd = '\x02'+command + '\x03';
-		// console.log("txd : "+txd);
+		if ( send == 1 ){
+			led.writeSync(1);
+			var txd = '\x02'+ID_ADDR+ command + '\x03';
+		
+			console.log('txd : ' + txd);
+			port.write(txd);
 
-		port.write(txd);
+	   	setTimeout(function(){
+  		   	led.writeSync(0);
+  			},WAIT_TX_MSEC);
+		}
 
-	   setTimeout(function(){
-   	   led.writeSync(0);
-   	},WAIT_TX_MSEC);
 	});
 
   myEmitter.on('uartRxd',function(poo){
@@ -145,21 +148,25 @@ io.on('connection', function (socket) {
 port.on('data',function (data){
 
 	rxCount = ( rxCount < 99998 ) ? rxCount = rxCount+1 : rxCount ++;
-	console.log( 'RXD = ' + rxCount + ' : '+ data);
-  	//var buff = new Buffer(data,'utf8');
-  	// console.log('received data =' + buff.toString('hex'));
-	var buff = new Buffer(data);
-	var sensValue = parseInt(buff.slice(2,6));
+	//console.log( 'RXD = ' + rxCount + ' : '+ data);
+  	
+	var buff = new Buffer(data,'utf8');
+  	console.log('received data = ' + buff.toString());
+	// var buff = new Buffer(data);
 
-	console.log(sensValue);
+	if( buff[0] == 0x02 ) { 
 
-	var packet = {ch:0,data:'0'};
+		//var sensValue = parseInt(buff.slice(3,7));
+		var sensValue = buff.toString('utf8',3,7);
+		var packet = {ch:0,data:'0'};
 	
-	packet.ch=buff[1];
-	packet.data = sensValue;
-	console.log(packet);
+		packet.ch=buff[1];
+		packet.data = sensValue;
 
-	myEmitter.emit('uartRxd', packet);
+		console.log(packet);
+
+		myEmitter.emit('uartRxd', packet);
+	}
 });
 
 function sleepFor( sleepDuration ){
@@ -169,7 +176,6 @@ function sleepFor( sleepDuration ){
 
 var exec = require('child_process').exec;
 
-/*
 process.on('SIGTERM', function () {
     process.exit(0);
 });
@@ -177,7 +183,6 @@ process.on('SIGTERM', function () {
 process.on('SIGINT', function () {
     process.exit(0);
 });
-*/
  
 process.on('exit', function () {
     console.log('\nShutting down, performing GPIO cleanup');

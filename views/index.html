@@ -74,28 +74,37 @@ var countInput =0;
 
 socket.on('rs485',function(msg){
 
-	var testIn = msg.data;
+	var msg2 = msg.data;
 	var msg1 = msg.ch;
+	var gaugeValue = 0;
 
-	var gaugeValue = testIn/10;
+	console.log( 'ch :'+ msg1 + ' : ' + 'data : ' + msg2);
+
+	if( msg2[0] == 'O'){
+		gaugeValue = 200;
+	} else if ( msg2[0] == 'C'){
+		gaugeValue = 0;
+	} else {
+		gaugeValue = msg2/10;
+	}
 		
-	if(msg1 == 65){ 		//'A'
+	if(msg1 == 81){ 		//'A'
 	   countCurrent = ( countCurrent < 598 ) ? countCurrent + 1 : 0 ;
 		document.getElementById('currentValue').innerHTML = gaugeValue;
 		$('#gauge1').attr('data-value', gaugeValue);
 	   scopeData[0].sample[countCurrent] = gaugeValue;
 		scope.onPaint(scopeData);
-	} else if(msg1 == 66){
+	} else if(msg1 == 97){
 	   countVolt = ( countVolt < 598 ) ? countVolt + 1 : 0 ;
 		document.getElementById('voltValue').innerHTML = gaugeValue;
 		$('#gauge2').attr('data-value', gaugeValue);
 	   scopeData[1].sample[countVolt] = gaugeValue;
-	} else if(msg1 == 67){
+	} else if(msg1 == 113){
 	   countPress = ( countPress < 598 ) ? countPress + 1 : 0 ;
-		document.getElementById('pressValue').innerHTML = gaugeValue;
+		document.getElementById('pressValue').innerHTML = msg2;
 		$('#gauge3').attr('data-value', gaugeValue);
 	   scopeData[2].sample[countPress] = gaugeValue;
-	} else if(msg1== 68){
+	} else if(msg1== 55){
 	   countInput = ( countInput < 598 ) ? countInput + 1 : 0 ;
 		document.getElementById('dcState').innerHTML = gaugeValue;
 		$('#gauge4').attr('data-value', gaugeValue);
@@ -105,9 +114,10 @@ socket.on('rs485',function(msg){
 
 setInterval(function(){
 	count = ( count < 998 ) ? count = count +1 : 0;
-	var cmd = ( count % 4 + 1 );
+	var cmd = ( count % 3 + 1 );
 	socket.emit('readSensor',cmd);
-},250);
+	// socket.emit('readSensor',3);
+},1000);
 
 </script>
 {% endblock %}
